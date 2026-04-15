@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANM - Survey123</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#005691">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #ffffff;
+            border: 8px solid #005691;
+            box-sizing: border-box;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+        .logo {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 50px;
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        .btn {
+            background-color: #4472c4;
+            color: white;
+            padding: 15px 40px;
+            font-size: 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            background-color: #355a9c;
+        }
+
+        /* Estilo para o banner de instalação */
+        #install-banner {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #005691;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            width: 80%;
+            max-width: 350px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="logo.jpg" alt="Logo ANM" class="logo">
+        <div class="button-container">
+            <a href="https://survey123.arcgis.com/share/73e9cc5bc5ac4f7f86fbede2122bdeeb?portalUrl=https://geo.anm.gov.br/portal" class="btn">Botão</a>
+        </div>
+    </div>
+
+    <!-- Banner de Instalação -->
+    <div id="install-banner">
+        Clique aqui para instalar na Tela Inicial
+    </div>
+
+    <script>
+        // Registro do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso!'))
+                    .catch(err => console.log('Erro ao registrar Service Worker', err));
+            });
+        }
+
+        // Lógica do Prompt de Instalação
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('Evento beforeinstallprompt disparado!');
+            // Previne o navegador de mostrar o banner padrão imediatamente
+            e.preventDefault();
+            // Guarda o evento para ser disparado depois
+            deferredPrompt = e;
+            // Mostra o nosso banner customizado
+            installBanner.style.display = 'block';
+        });
+
+        // Caso o evento não dispare por algum motivo, podemos tentar mostrar o banner
+        // após alguns segundos, embora ele só funcione se o evento acima for capturado.
+        setTimeout(() => {
+            if (!deferredPrompt) {
+                console.log('O navegador ainda não permitiu a instalação. Verifique se você está em HTTPS.');
+            }
+        }, 3000);
+
+        installBanner.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Mostra o prompt de instalação
+                deferredPrompt.prompt();
+                // Espera a resposta do usuário
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`Usuário escolheu: ${outcome}`);
+                // Limpa o prompt
+                deferredPrompt = null;
+                // Esconde o nosso banner
+                installBanner.style.display = 'none';
+            }
+        });
+
+        // Esconde o banner se o app já estiver instalado
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA instalada com sucesso!');
+            installBanner.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
